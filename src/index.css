@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #25D366;
+  --secondary: #0b141a;
+  --accent: #075e54;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  background: linear-gradient(180deg, rgba(6,10,14,1) 0%, rgba(4,8,11,1) 100%);
+}
+
+.neon {
+  box-shadow: 0 0 10px rgba(37,211,102,0.12), inset 0 0 6px rgba(37,211,102,0.04);
+}

@@ -80,40 +80,43 @@ export default function PaymentsPage() {
       </div>
 
       <div className="mt-4 bg-[rgba(6,10,14,0.6)] p-4 rounded-lg-soft">
-        <table className="w-full">
+        <table className="w-full border-collapse">
           <thead className="text-slate-400 text-sm">
             <tr>
-              <th>ID</th>
-              <th>Phone</th>
-              <th>Amount</th>
-              <th>Plan</th>
-              <th>Router</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th>Actions</th>
+              <th className="px-3 py-2 text-left">ID</th>
+              <th className="px-3 py-2 text-left">Phone</th>
+              <th className="px-3 py-2 text-left">Amount</th>
+              <th className="px-3 py-2 text-left">Plan</th>
+              <th className="px-3 py-2 text-left">Router</th>
+              <th className="px-3 py-2 text-left">Status</th>
+              <th className="px-3 py-2 text-left">Created</th>
+              <th className="px-3 py-2 text-left">Actions</th>
             </tr>
           </thead>
+
           <tbody>
             {payments.map((p) => (
               <tr key={p.id} className="border-t border-slate-800">
-                <td>{p.id}</td>
-                <td>{p.phone}</td>
-                <td>{p.amount} F</td>
-                <td>{p.plan}</td>
-                <td>{p.router?.name}</td>
+                <td className="px-3 py-2">{p.id}</td>
+                <td className="px-3 py-2">{p.phone}</td>
+                <td className="px-3 py-2">{p.amount} F</td>
+                <td className="px-3 py-2">{p.plan}</td>
+                <td className="px-3 py-2">{p.router?.name}</td>
                 <td
-                  className={
+                  className={`px-3 py-2 ${
                     p.status === 'approved'
                       ? 'text-green-400'
                       : p.status === 'rejected'
                       ? 'text-red-400'
                       : 'text-yellow-400'
-                  }
+                  }`}
                 >
                   {p.status}
                 </td>
-                <td>{new Date(p.created_at).toLocaleString()}</td>
-                <td>
+                <td className="px-3 py-2">
+                  {new Date(p.created_at).toLocaleString()}
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap">
                   {p.status === 'pending' && (
                     <>
                       <button
@@ -133,15 +136,17 @@ export default function PaymentsPage() {
                 </td>
               </tr>
             ))}
+
             {payments.length === 0 && (
               <tr>
-                <td colSpan="8" className="py-6 text-slate-400">
+                <td colSpan="8" className="px-3 py-6 text-slate-400 text-center">
                   No payments found
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+
       </div>
     </div>
   )

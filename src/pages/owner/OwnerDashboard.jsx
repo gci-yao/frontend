@@ -108,6 +108,13 @@ export default function OwnerDashboard() {
         <p className="text-slate-400">
           Manage your router fleet and health status in Routers page.
         </p>
+        <Link
+  to="/owner/activity"
+  className="text-sm text-primary hover:underline"
+>
+  Voir tout l’historique →
+</Link>
+
       </div>
     </div>
   )

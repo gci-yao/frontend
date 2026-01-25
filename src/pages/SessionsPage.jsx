@@ -51,30 +51,40 @@ export default function SessionsPage() {
       )}
 
       <div className="mt-4 bg-[rgba(6,10,14,0.6)] p-4 rounded-lg-soft">
-        <table className="w-full">
+        <table className="w-full border-collapse">
           <thead className="text-slate-400 text-sm">
             <tr>
-              <th>Phone</th>
-              <th>MAC</th>
-              <th>Router</th>
-              <th>End Time</th>
-              <th>Remaining</th>
-              <th>Actions</th>
+              <th className="px-3 py-2 text-left">Phone</th>
+              <th className="px-3 py-2 text-left">MAC</th>
+              <th className="px-3 py-2 text-left">Router</th>
+              <th className="px-3 py-2 text-left">Commune</th>
+              <th className="px-3 py-2 text-left">End Time</th>
+              <th className="px-3 py-2 text-left">Remaining</th>
+              <th className="px-3 py-2 text-left">Actions</th>
             </tr>
           </thead>
+
           <tbody>
             {sessions.map((s) => (
               <tr key={s.id} className="border-t border-slate-800">
-                <td>{s.phone}</td>
-                <td>{s.mac}</td>
-                <td>{s.router?.name}</td>
-                <td>{new Date(s.end_time).toLocaleString()}</td>
-                <td>
+                <td className="px-3 py-2">{s.phone}</td>
+                <td className="px-3 py-2">{s.mac}</td>
+                <td className="px-3 py-2">{s.router?.name}</td>
+                <td className="px-3 py-2">{s.commune}</td>
+                <td className="px-3 py-2">
+                  {new Date(s.end_time).toLocaleString()}
+                </td>
+                <td className="px-3 py-2">
                   {s.ended
                     ? 'Ended'
-                    : `${Math.max(0, Math.round((new Date(s.end_time) - Date.now()) / 3600000))}h`}
+                    : `${Math.max(
+                        0,
+                        Math.round(
+                          (new Date(s.end_time) - Date.now()) / 3600000
+                        )
+                      )}h`}
                 </td>
-                <td>
+                <td className="px-3 py-2 whitespace-nowrap">
                   {!s.ended && (
                     <button
                       onClick={() => extend(s.id)}
@@ -94,15 +104,17 @@ export default function SessionsPage() {
                 </td>
               </tr>
             ))}
+
             {sessions.length === 0 && (
               <tr>
-                <td colSpan="6" className="py-6 text-slate-400">
+                <td colSpan="7" className="px-3 py-6 text-slate-400 text-center">
                   No sessions
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+
       </div>
     </div>
   )

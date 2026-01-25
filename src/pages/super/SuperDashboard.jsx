@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import api from '../../services/api'
 import StatsCard from '../../components/ui/StatsCard'
 import ChartCard from '../../components/ui/ChartCard'
+import { Link } from 'react-router-dom'
 
 export default function SuperDashboard() {
   const [stats, setStats] = useState(null)
@@ -39,6 +40,12 @@ export default function SuperDashboard() {
       </div>
 
       <div className="mt-6 bg-[rgba(6,10,14,0.6)] p-4 rounded-lg-soft">
+              <Link
+                  to="/super/history"
+                  className="text-sm text-primary hover:underline"
+                >
+                  Go to see history →
+                </Link>
         <h3 className="text-lg mb-3">Businesses</h3>
         <table className="w-full text-left">
           <thead className="text-slate-400 text-sm">
@@ -59,6 +66,7 @@ export default function SuperDashboard() {
             ))}
           </tbody>
         </table>
+
       </div>
     </div>
   )

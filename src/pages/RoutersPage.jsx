@@ -62,25 +62,51 @@ export default function RoutersPage() {
       )}
 
       <div className="mt-4 bg-[rgba(6,10,14,0.6)] p-4 rounded-lg-soft">
-        <table className="w-full">
+        <table className="w-full border-collapse">
           <thead className="text-slate-400 text-sm">
-            <tr><th>Name</th><th>IP</th><th>Location</th><th>Health</th><th>Actions</th></tr>
+            <tr>
+              <th className="px-3 py-2 text-left">Name</th>
+              <th className="px-3 py-2 text-left">IP</th>
+              <th className="px-3 py-2 text-left">Location</th>
+              <th className="px-3 py-2 text-left">Health</th>
+              <th className="px-3 py-2 text-left">Actions</th>
+            </tr>
           </thead>
+
           <tbody>
-            {routers.map(r => (
+            {routers.map((r) => (
               <tr key={r.id} className="border-t border-slate-800">
-                <td className="py-2">{r.name}</td>
-                <td>{r.ip}</td>
-                <td>{r.location}</td>
-                <td className={r.health === 'ok' ? 'text-green-400' : 'text-red-400'}>{r.health}</td>
-                <td>
-                  <button onClick={() => del(r.id)} className="px-3 py-1 bg-red-600 rounded-sm">Delete</button>
+                <td className="px-3 py-2">{r.name}</td>
+                <td className="px-3 py-2">{r.ip}</td>
+                <td className="px-3 py-2">{r.location}</td>
+                <td
+                  className={`px-3 py-2 ${
+                    r.health === 'ok' ? 'text-green-400' : 'text-red-400'
+                  }`}
+                >
+                  {r.health}
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap">
+                  <button
+                    onClick={() => del(r.id)}
+                    className="px-3 py-1 bg-red-600 rounded-sm text-white"
+                  >
+                    Delete
+                  </button>
                 </td>
               </tr>
             ))}
-            {routers.length === 0 && <tr><td colSpan="5" className="py-6 text-slate-400">No routers</td></tr>}
+
+            {routers.length === 0 && (
+              <tr>
+                <td colSpan="5" className="px-3 py-6 text-slate-400 text-center">
+                  No routers
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
+
       </div>
     </div>
   )

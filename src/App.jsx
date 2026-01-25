@@ -12,10 +12,12 @@ import SessionsPage from './pages/SessionsPage'
 import RoutersPage from './pages/RoutersPage'
 import PricingPage from './pages/PricingPage'
 import SettingsPage from './pages/SettingsPage'
+import OwnerActivity from './pages/owner/OwnerActivity' // ✅ NOUVEAU
 import { useAuth } from './contexts/AuthContext'
 import ProtectedRoute from './components/guards/ProtectedRoute'
 import RoleGuard from './components/guards/RoleGuard'
 import Layout from './components/layout/Layout'
+import SuperHistory from './pages/super/SuperHistory'
 
 export default function App() {
   const { user } = useAuth()
@@ -37,6 +39,16 @@ export default function App() {
               </RoleGuard>
             }
           />
+          {/* ✅ NOUVELLE PAGE HISTORIQUE */}
+          <Route
+            path="/super/history"
+            element={
+              <RoleGuard allowedRoles={['SUPER_ADMIN']}>
+                <SuperHistory />
+              </RoleGuard>
+            }
+          />
+
           <Route
             path="/owner/*"
             element={
@@ -45,6 +57,18 @@ export default function App() {
               </RoleGuard>
             }
           />
+
+          {/* ✅ NOUVELLE PAGE HISTORIQUE */}
+          <Route
+            path="/owner/activity"
+            element={
+              <RoleGuard allowedRoles={['BUSINESS_OWNER']}>
+                <OwnerActivity />
+              </RoleGuard>
+            }
+          />
+          
+
           <Route
             path="/staff/*"
             element={
@@ -53,6 +77,7 @@ export default function App() {
               </RoleGuard>
             }
           />
+
           <Route path="/payments" element={<PaymentsPage />} />
           <Route path="/sessions" element={<SessionsPage />} />
           <Route path="/routers" element={<RoutersPage />} />

@@ -13,10 +13,23 @@ export default function SuperHistory() {
   const [routers, setRouters] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [minLoadingDone, setMinLoadingDone] = useState(false);
   const [activeTab, setActiveTab] = useState('sessions');
   const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+
+
+  useEffect(() => {
+      const timer = setTimeout(() => {
+        setMinLoadingDone(true);
+      }, 3000); // ⏱️ 3 secondes
+    
+      return () => clearTimeout(timer);
+    }, []);
+    
+
 
   /** 🔹 Load all data **/
   useEffect(() => {
@@ -128,7 +141,23 @@ export default function SuperHistory() {
       dataPoints.push(point);
     }
 
-    const colors = ['#4ade80', '#3b82f6', '#facc15', '#f87171', '#a78bfa'];
+    // 🔑 Hash simple d'une string → nombre
+        const hashString = (str) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return Math.abs(hash);
+        };
+
+        // 🎨 Couleur stable basée sur le phone
+        const colorFromPhone = (phone) => {
+        if (!phone) return '#888888'; // fallback
+        const hash = hashString(phone.toString());
+        const hue = hash % 360; // 0–359
+        return `hsl(${hue}, 70%, 55%)`;
+        };
+
 
     return (
       <ResponsiveContainer width="100%" height={300}>
@@ -139,7 +168,7 @@ export default function SuperHistory() {
           <Tooltip />
           <Legend verticalAlign="top" />
           {activeSessions.map((s, i) => (
-            <Line key={s.id} type="monotone" dataKey={s.phone} stroke={colors[i % colors.length]} dot={false} />
+            <Line key={s.id} type="monotone" dataKey={s.phone} stroke={colorFromPhone(s.phone)} dot={false} />
           ))}
         </LineChart>
       </ResponsiveContainer>
@@ -149,26 +178,38 @@ export default function SuperHistory() {
   const renderPaymentsChart = () => {
     if (!payments.length) return <div className="text-slate-400">No payments</div>;
 
-    const filtered = filterData(payments, 'payments');
+    // 🔹 filtre les paiements avec status "approved" uniquement
+    const filteredPayments = payments
+        .filter(p => p.status?.toLowerCase() === 'approved') // ignore majuscules/minuscules
+        .filter(p => {
+        const created = new Date(p.created_at);
+        const start = startDate ? new Date(startDate) : null;
+        const end = endDate ? new Date(endDate) : null;
+        return (!start || created >= start) && (!end || created <= end);
+        });
+
     const grouped = {};
-    filtered.forEach(p => {
-      const date = new Date(p.created_at).toLocaleDateString();
-      grouped[date] = (grouped[date] || 0) + p.amount;
+    filteredPayments.forEach(p => {
+        const date = new Date(p.created_at).toLocaleDateString();
+        grouped[date] = (grouped[date] || 0) + Number(p.amount);
     });
+
     const data = Object.entries(grouped).map(([date, amount]) => ({ date, amount }));
 
+    if (!data.length) return <div className="text-slate-400">No approved payments</div>;
+
     return (
-      <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data}>
-          <CartesianGrid stroke="#2c2c2c" />
-          <XAxis dataKey="date" />
-          <YAxis />
-          <Tooltip formatter={v => `${v.toLocaleString()} F`} />
-          <Bar dataKey="amount" fill="#3b82f6" />
+            <CartesianGrid stroke="#2c2c2c" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip formatter={v => `${v.toLocaleString()} F`} />
+            <Bar dataKey="amount" fill="#3b82f6" />
         </BarChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
     );
-  };
+    };
 
   const renderRoutersChart = () => {
     if (!routers.length) return <div className="text-slate-400">No routers</div>;
@@ -189,10 +230,11 @@ export default function SuperHistory() {
 
   /** 🔹 Business Charts **/
   const renderBusinessChart = () => {
-    const filteredPayments = filterData(payments, 'payments');
+    const filtered = filterData(payments, 'payments').filter(p => p.status === 'approved');
+
     const businessMap = {};
 
-    filteredPayments.forEach(p => {
+    filtered.forEach(p => {
       const bizId = p.business?.id || 'unknown';
       const bizName = p.business?.name || 'Unknown';
 
@@ -232,7 +274,7 @@ export default function SuperHistory() {
 
   /** 🔹 Business Totals Table + Avatar **/
   const renderBusinessTable = () => {
-    const filteredPayments = filterData(payments, 'payments');
+    const filteredPayments = filterData(payments, 'payments').filter(p => p.status === 'approved');
     const businessMap = {};
 
     filteredPayments.forEach(p => {
@@ -481,6 +523,31 @@ export default function SuperHistory() {
       default: return null;
     }
   };
+
+
+     if (loading || !minLoadingDone) {
+  const text = "greenhat cloud history...";
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-950">
+      <div className="flex gap-1 text-3xl font-bold tracking-widest">
+        {text.split("").map((char, i) => (
+          <span
+            key={i}
+            className={`text-cyan-200 animate-zigzag`}
+            style={{
+              animationDelay: `${i * 0.15}s`,
+              animationDuration: "1.2s",
+              transform: i % 2 === 0 ? "translateY(-8px)" : "translateY(8px)"
+            }}
+          >
+            {char === " " ? "\u00A0" : char}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
   return (
     <div className="p-4">

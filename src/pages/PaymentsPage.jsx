@@ -36,14 +36,27 @@ export default function PaymentsPage() {
     loadPayments()
   }, [filters])
 
+  // -----------------------------
+  // Confirmer un paiement
+  // -----------------------------
   const confirm = async (id) => {
     await api.confirmPayment({ paymentId: id, token: localStorage.getItem('gh_token') })
+    // On retire le paiement approuvé du filtre ou recharge la liste
     loadPayments()
   }
 
+  // -----------------------------
+  // Rejeter / Supprimer un paiement
+  // -----------------------------
   const reject = async (id) => {
+    const proceed = window.confirm("Do you really want to delete this payment?")
+    if (!proceed) return
+
+    // ⚡ Supprimer définitivement côté API
     await api.rejectPayment({ paymentId: id, token: localStorage.getItem('gh_token') })
-    loadPayments()
+
+    // ⚡ Retirer immédiatement du state
+    setPayments((prev) => prev.filter(p => p.id !== id))
   }
 
   if (loading) return <div className="text-slate-400">Chargement…</div>
@@ -146,7 +159,6 @@ export default function PaymentsPage() {
             )}
           </tbody>
         </table>
-
       </div>
     </div>
   )

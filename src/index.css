@@ -19,3 +19,44 @@ body {
 .neon {
   box-shadow: 0 0 10px rgba(37,211,102,0.12), inset 0 0 6px rgba(37,211,102,0.04);
 }
+
+@keyframes zigzag {
+  0%   { transform: translateY(0); opacity: 0.2; }
+  25%  { transform: translateY(-10px); opacity: 1; }
+  50%  { transform: translateY(0); }
+  75%  { transform: translateY(10px); }
+  100% { transform: translateY(0); opacity: 0.6; }
+
+
+}
+
+.animate-zigzag {
+  animation-name: zigzag;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.ai-highlight {
+  position: relative;
+  box-shadow: 0 0 25px rgba(6, 200, 255, 0.7);
+  transform: scale(1.05);
+  transition: all 0.3s;
+  z-index: 1000;
+}
+
+
+/* Conteneur principal : sidebar + dashboard */
+#root > div {
+  @apply flex min-h-screen bg-slate-950;
+}
+
+/* Sidebar fixe à gauche */
+aside {
+  @apply w-64 flex-shrink-0 bg-[rgba(10,15,25,0.97)] p-4 border-r border-slate-800;
+}
+
+/* Contenu principal (dashboard) */
+.main-content {
+  @apply flex-1 p-4 overflow-auto;
+}
+

@@ -11,61 +11,119 @@ export default function OwnerDashboard() {
 
   const [stats, setStats] = useState(null)
   const [routers, setRouters] = useState([])
+  const [payments, setPayments] = useState([])
+  const [revenueHistory, setRevenueHistory] = useState([])
+  const [planDistribution, setPlanDistribution] = useState([])
   const [loading, setLoading] = useState(true)
+  const [minLoadingDone, setMinLoadingDone] = useState(false)
+
+  // ⏱️ Loader minimum 3s
+  useEffect(() => {
+    const timer = setTimeout(() => setMinLoadingDone(true), 3000)
+    return () => clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true)
+  const loadData = async () => {
+    try {
+      setLoading(true)
 
-        // 🔹 Récupérer les routers
-        const r = await api.getMyRouters({ token })
-        setRouters(r || [])
+      // 🔹 Stats réelles (boxes)
+      const s = await api.getOwnerStats({ token })
+      setStats(s)
 
-        // 🔹 S'il n'y a pas de router, stats = 0
-        if (!r || r.length === 0) {
-          setStats({
-            revenueToday: 0,
-            revenueThisMonth: 0,
-            activeSessions: 0,
-            pendingPayments: 0
-          })
-        } else {
-          const s = await api.getOwnerStats({ token })
-          setStats(s)
-        }
-      } catch (e) {
-        console.error('Error loading dashboard:', e)
-        setStats({
-          revenueToday: 0,
-          revenueThisMonth: 0,
-          activeSessions: 0,
-          pendingPayments: 0
-        })
-        setRouters([])
-      } finally {
-        setLoading(false)
-      }
+      // 🔹 Routers
+      const r = await api.getMyRouters({ token })
+      setRouters(r || [])
+
+      // 🔹 Paiements réels
+      const p = await api.getPayments({ token })
+      setPayments(p || [])
+
+      // ✅ Filtrer uniquement les paiements approved pour les graphes
+      const approvedPayments = (p || []).filter(pay => pay.status === 'approved')
+
+      // ====== COURBE 1 : Revenue history (par jour) ======
+      const revenueMap = {}
+      approvedPayments.forEach(pay => {
+        const day = new Date(pay.created_at).toLocaleDateString()
+        revenueMap[day] = (revenueMap[day] || 0) + Number(pay.amount)
+      })
+
+      const revenueData = Object.entries(revenueMap)
+        .sort((a, b) => new Date(a[0]) - new Date(b[0]))
+        .map(([date, total]) => ({
+          name: date,
+          value: total
+        }))
+
+      setRevenueHistory(revenueData)
+
+      // ====== COURBE 2 : Plan distribution ======
+      const planMap = {}
+      approvedPayments.forEach(pay => {
+        const plan = pay.plan || 'Unknown'
+        planMap[plan] = (planMap[plan] || 0) + 1
+      })
+
+      const planData = Object.entries(planMap).map(([plan, count]) => ({
+        name: plan,
+        value: count
+      }))
+
+      setPlanDistribution(planData)
+
+    } catch (e) {
+      console.error('Error loading dashboard:', e)
+
+      setStats({
+        revenueToday: 0,
+        revenueThisMonth: 0,
+        activeSessions: 0,
+        pendingPayments: 0
+      })
+      setRouters([])
+      setPayments([])
+      setRevenueHistory([])
+      setPlanDistribution([])
+    } finally {
+      setLoading(false)
     }
+  }
 
-    loadData()
-  }, [token])
+  loadData()
+}, [token])
 
-  // 🔹 Exemple de données fictives pour les graphiques
-  const revenueHistory = Array.from({ length: 6 }).map((_, i) => ({
-    name: `Day ${i + 1}`,
-    value: Math.floor(Math.random() * 200)
-  }))
 
-  // 🔹 Affichage pendant le chargement
-  if (loading) return <div className="text-slate-400">Loading…</div>
+  // 🔹 Loader animé
+  if (loading || !minLoadingDone) {
+    const text = "greenhat cloud home..."
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <div className="flex gap-1 text-3xl font-bold tracking-widest">
+          {text.split("").map((char, i) => (
+            <span
+              key={i}
+              className="text-indigo-500 animate-zigzag"
+              style={{
+                animationDelay: `${i * 0.15}s`,
+                animationDuration: "1.2s",
+                transform: i % 2 === 0 ? "translateY(-8px)" : "translateY(8px)"
+              }}
+            >
+              {char === " " ? "\u00A0" : char}
+            </span>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
-  // 🔹 Vérification router une seule fois
   const noRouters = routers.length === 0
 
   return (
     <div>
-      {/* 👉 Message unique si aucun router */}
+      {/* ⚠️ Message info */}
       {noRouters && (
         <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 p-4 rounded-lg-soft">
           <strong>Aucun router configuré.</strong><br />
@@ -81,41 +139,49 @@ export default function OwnerDashboard() {
         </div>
       )}
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <StatsCard title="Revenue today" value={stats ? `${stats.revenueToday} F` : '—'} />
-        <StatsCard title="Revenue month" value={stats ? `${stats.revenueThisMonth} F` : '—'} />
-        <StatsCard title="Active sessions" value={stats ? stats.activeSessions : '—'} />
-        <StatsCard title="Pending payments" value={stats ? stats.pendingPayments : '—'} />
-      </div>
+      {/* 📦 Stats réelles */}
+<div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+  <StatsCard title="Revenue today" value={stats ? `${stats.revenueToday} F` : '—'} />
+  <StatsCard title="Revenue month" value={stats ? `${stats.revenueThisMonth} F` : '—'} />
+  <StatsCard title="Active sessions" value={stats ? stats.activeSessions : '—'} />
+  <StatsCard title="Pending payments" value={stats ? stats.pendingPayments : '—'} />
+</div>
 
-      {/* Graphiques */}
-      <div className="grid grid-cols-2 gap-4 mt-6">
-        <ChartCard title="Revenue history" data={revenueHistory} />
-        <ChartCard
-          title="Plan distribution"
-          data={[
-            { name: '200F', value: 30 },
-            { name: '500F', value: 50 },
-            { name: '1000F', value: 20 }
-          ]}
-        />
-      </div>
+{/* 📈 Graphiques réels */}
+<div className="grid gap-4 grid-cols-1 md:grid-cols-2 mt-6">
+  <ChartCard
+    title="Revenue history"
+    data={revenueHistory}
+    emptyText="Aucun paiement trouvé"
+  />
+  <ChartCard
+    title="Plan distribution"
+    data={planDistribution}
+    emptyText="Aucune donnée de plan"
+  />
+</div>
 
-      {/* Gestion des routers */}
-      <div className="mt-6">
-        <h3 className="text-lg">Router management</h3>
-        <p className="text-slate-400">
-          Manage your router fleet and health status in Routers page.
-        </p>
-        <Link
-          to="/owner/activity"
-          className="text-sm text-primary hover:underline"
-        >
-          Go to see history →
-        </Link>
+{/* 🔗 Navigation */}
+<div className="mt-6">
+  <h3 className="text-lg sm:text-base">Router management</h3>
+  <p className="text-slate-400 text-sm sm:text-xs">
+    Manage your router fleet and health status in Routers page.
+  </p>
+  <Link
+    to="/owner/activity"
+    className="text-sm sm:text-xs text-primary hover:underline"
+  >
+    Go to see history →
+  </Link>
+</div>
 
-      </div>
+{/* 🔹 Tables */}
+<div className="overflow-x-auto rounded-lg border border-slate-800 mt-6">
+  <table className="w-full text-left border-collapse">
+    {/* ...thead et tbody inchangés */}
+  </table>
+</div>
+
     </div>
   )
 }

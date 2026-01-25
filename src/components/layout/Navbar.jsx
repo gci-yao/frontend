@@ -1,12 +1,38 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { LayoutDashboard, Sun, Moon } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import api from '../../services/api'
 
 export default function Navbar({ theme, toggleTheme }) {
   const { user } = useAuth()
   const initial = (user?.name || user?.username || user?.email || 'U')
     .charAt(0)
     .toUpperCase()
+
+  const [pendingPayments, setPendingPayments] = useState(0)
+
+  // Charger les paiements en attente
+  const loadPendingPayments = async () => {
+    const token = localStorage.getItem('gh_token')
+    if (!token) return
+
+    try {
+      const payments = await api.getPayments({ token })
+      const pendingCount = payments.filter(p => p.status === 'pending').length
+      setPendingPayments(pendingCount)
+    } catch (err) {
+      console.error('Error loading pending payments:', err)
+    }
+  }
+
+  useEffect(() => {
+    loadPendingPayments()
+
+    // Vérifie toutes les 10 secondes pour les nouveaux paiements
+    const interval = setInterval(loadPendingPayments, 10000)
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <header className="relative flex items-center justify-between p-4 border-b border-slate-800 dark:border-slate-1 bg-slate-50 dark:bg-slate-900 overflow-hidden">
@@ -16,7 +42,8 @@ export default function Navbar({ theme, toggleTheme }) {
       <div className="relative z-10 flex items-center gap-2">
         <LayoutDashboard size={20} className="text-green-500 dark:text-green-300" />
         <div className="text-lg font-semibold tracking-wide">Dashboard</div>
-         {/* Bouton toggle thème */}
+
+        {/* Bouton toggle thème */}
         <button
           onClick={toggleTheme}
           className="p-2 rounded-md border border-slate-400 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-800 transition"
@@ -26,9 +53,16 @@ export default function Navbar({ theme, toggleTheme }) {
         </button>
       </div>
 
-      {/* User + Theme toggle */}
-      <div className="relative z-10 flex items-center gap-3">
-        
+      {/* User + Notifications */}
+      <div className="relative z-20 flex items-center gap-3">
+        {/* Badge paiements en attente */}
+        {pendingPayments > 0 && (
+          <Link to="/payments" className="relative">
+            <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:opacity-80 transition">
+              {pendingPayments}
+            </div>
+          </Link>
+        )}
 
         <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-black dark:text-white animate-avatar-hue shadow-[0_0_14px_rgba(37,211,102,0.9)]">
           {initial}

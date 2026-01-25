@@ -109,11 +109,11 @@ export default function OwnerDashboard() {
           Manage your router fleet and health status in Routers page.
         </p>
         <Link
-  to="/owner/activity"
-  className="text-sm text-primary hover:underline"
->
-  Voir tout l’historique →
-</Link>
+          to="/owner/activity"
+          className="text-sm text-primary hover:underline"
+        >
+          Go to see history →
+        </Link>
 
       </div>
     </div>

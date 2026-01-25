@@ -4,6 +4,8 @@ import api from '../../services/api';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend, ResponsiveContainer, BarChart, Bar
 } from 'recharts';
+import { Link } from 'react-router-dom';
+
 
 export default function OwnerHistory() {
   const { user } = useAuth();
@@ -368,8 +370,17 @@ export default function OwnerHistory() {
   };
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">Full History</h2>
+    <div >
+        <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Full History</h2>
+            <Link
+                to="/owner/"
+                className="text-sm text-primary hover:underline"
+            >
+                ← Go to Home
+            </Link>
+        </div>
+
       {renderTabs()}
       <div className="mb-4">
         <input

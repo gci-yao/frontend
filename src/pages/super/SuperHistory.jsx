@@ -4,6 +4,8 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend, ResponsiveContainer, BarChart, Bar
 } from 'recharts';
 
+import { Link } from 'react-router-dom';
+
 export default function SuperHistory() {
   const token = localStorage.getItem('gh_token');
 
@@ -482,7 +484,16 @@ export default function SuperHistory() {
 
   return (
     <div className="p-4">
-      <h2 className="text-xl font-semibold mb-4">Super Admin History</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Super Admin History</h2>
+        <Link
+            to="/super"
+            className="text-sm text-primary hover:underline"
+        >
+            ← Go to Home
+        </Link>
+      </div>
+
       {renderTabs()}
       <div className="mb-4">
         <input

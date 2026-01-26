@@ -8,6 +8,7 @@ export default function RoutersPage() {
 
   const load = async () => {
     setRouters(await api.getRouters({ token: localStorage.getItem('gh_token') }))
+    
   }
 
   useEffect(() => {
@@ -35,6 +36,9 @@ export default function RoutersPage() {
   }
 
   const del = async (id) => {
+    const proceed = window.confirm("Do you really want to delete this Router?")
+    if (!proceed) return
+
     await api.deleteRouter({ routerId: id, token: localStorage.getItem('gh_token') })
     load()
   }

@@ -1,12 +1,12 @@
 import React from 'react'
 
 const plans = [
-  { price: '200F', hours: 24 , day:' (1 jour) '},
-  { price: '400F', hours: 48 , day:' (2 jours) '},
-  { price: '500F', hours: 72 , day:' (3 jours) '},
-  { price: '1000F', hours: 168, day:' (1 Semaine )' },
-  { price: '3000F', hours: 720 , day:' (1 Mois) '},
-  { price: '5000F', hours: 1140 , day:' (2 Mois)'},
+  { price: '200F', hours: 24 , day:' (1 jr) '},
+  { price: '400F', hours: 48 , day:' (2 jrs) '},
+  { price: '500F', hours: 72 , day:' (3 jrs) '},
+  { price: '1000F', hours: 168, day:' (1 Sem )' },
+  { price: '3000F', hours: 720 , day:' (1 Ms) '},
+  { price: '5000F', hours: 1140 , day:' (2 Ms)'},
 ]
 
 export default function PricingPage() {

@@ -109,5 +109,16 @@ export default {
 
   async deleteRouter({ routerId, token }) {
     return request('/routers/delete/', { method: 'DELETE', token, body: { routerId } })
-  }
+  },
+
+// ------------------mis a jour profile ----------------------
+    async updateProfile({ username, email, current_password, new_password, token }) {
+    return request('/auth/profile/', {
+      method: 'POST',
+      token,
+      body: { username, email, current_password, new_password }
+    })
+  },
+
 }
+

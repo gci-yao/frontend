@@ -70,11 +70,31 @@ export default function PaymentsPage() {
     setPayments((prev) => prev.filter(p => p.id !== id))
   }
 
-  if (loading) return <div className="text-slate-400">Chargement…</div>
+  if (loading) return (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent border-b-transparent rounded-full animate-spin"></div>
+  </div>
+)
+
+
+  // -----------------------------
+  // Paiements filtrés pour la recherche / badge
+  // -----------------------------
+  const filteredPayments = payments.filter(p =>
+    p.phone.toLowerCase().includes(filters.phone.toLowerCase())
+  )
 
   return (
+    
     <div>
-      <h2 className="text-2xl">Payments</h2>
+      {/* Titre avec badge total */}
+      <div className="flex items-center gap-2">
+        <h2 className="text-2xl">Payments</h2>
+        <div className="ml-2 w-8 h-8 flex items-center justify-center rounded-full bg-blue-500 text-white text-sm font-semibold">
+          {payments.filter(p => p.status === "approved").length}
+        </div>
+      </div>
+
 
       {routers.length === 0 && (
         <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 p-4 rounded-lg-soft">
@@ -130,7 +150,11 @@ export default function PaymentsPage() {
                   </td>
 
                   <td className="px-3 py-2 text-white">{p.amount} F</td>
-                  <td className="px-3 py-2 text-white">{p.plan}</td>
+                  <td className="px-3 py-2 text-white">
+                    <span className="items-center gap-1 px-0 py-0 bg-green-300/10 text-green-300  rounded-full hover:text-green-700 transition-colors" >
+                      {p.plan}
+                    </span>
+                  </td>
                   <td className="px-3 py-2 text-white">{p.router?.name}</td>
 
                   {/* 🔥 STATUS BADGE */}
@@ -161,14 +185,14 @@ export default function PaymentsPage() {
                       <>
                         <button
                           onClick={() => confirm(p.id)}
-                          className="flex items-center gap-1 px-3 py-1 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors"
+                          className="flex items-center gap-1 px-3 py-1 bg-green-500/10 text-green-500  rounded-full hover:text-green-700 transition-colors"
                         >
                           <CheckIcon className="w-4 h-4" />
                           Approve
                         </button>
                         <button
                           onClick={() => reject(p.id)}
-                          className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                          className="flex items-center gap-1 px-3 py-1 bg-red-500/10 text-red-500  rounded-full hover:text-red-700 transition-colors"
                         >
                           <XMarkIcon className="w-4 h-4" />
                           Reject

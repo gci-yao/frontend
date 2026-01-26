@@ -3,7 +3,7 @@ import api from '../services/api'
 import {
   ArrowPathIcon,
   StopCircleIcon,
-  PhoneIcon ,
+  PhoneIcon,
   CpuChipIcon,
   WifiIcon,
   MapPinIcon,
@@ -11,12 +11,11 @@ import {
   ClockIcon,
 } from "@heroicons/react/24/solid";
 
-
-
 export default function SessionsPage() {
   const [sessions, setSessions] = useState([])
   const [routers, setRouters] = useState([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState("") // <-- état pour la recherche
 
   const loadRouters = async () => {
     const r = await api.getRouters({ token: localStorage.getItem('gh_token') })
@@ -49,11 +48,38 @@ export default function SessionsPage() {
     loadSessions()
   }
 
-  if (loading) return <div className="text-slate-400">Chargement…</div>
+  if (loading) return (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent border-b-transparent rounded-full animate-spin"></div>
+  </div>
+)
+
+
+  // Filtrage des sessions par numéro de téléphone
+  const filteredSessions = sessions.filter(s =>
+    s.phone.toLowerCase().includes(search.toLowerCase())
+  )
 
   return (
     <div>
-      <h2 className="text-2xl">Sessions</h2>
+      {/* Titre avec badge total */}
+      <div className="flex items-center gap-2">
+        <h2 className="text-2xl">Sessions</h2>
+        <div className="ml-2 w-8 h-8 flex items-center justify-center rounded-full bg-blue-500 text-white text-sm font-semibold">
+          {filteredSessions.length}
+        </div>
+      </div>
+
+      {/* Barre de recherche */}
+      <div className="mt-2 mb-4">
+        <input
+          type="text"
+          placeholder="Search by number phone ..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full p-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-blue-500"
+        />
+      </div>
 
       {routers.length === 0 && (
         <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 p-4 rounded-lg-soft">
@@ -77,7 +103,7 @@ export default function SessionsPage() {
           </thead>
 
           <tbody>
-            {sessions.map((s) => (
+            {filteredSessions.map((s) => (
               <tr key={s.id} className="border-t border-slate-800">
                 <td className="px-3 py-2">
                   <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-semibold">
@@ -154,7 +180,7 @@ export default function SessionsPage() {
               </tr>
             ))}
 
-            {sessions.length === 0 && (
+            {filteredSessions.length === 0 && (
               <tr>
                 <td colSpan="7" className="px-3 py-6 text-slate-400 text-center">
                   No sessions

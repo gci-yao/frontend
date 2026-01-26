@@ -4,8 +4,11 @@ import {
   CheckCircleIcon, 
   XCircleIcon, 
   CheckIcon, 
-
+  DevicePhoneMobileIcon
 } from '@heroicons/react/24/solid';
+import { WifiIcon, XMarkIcon } from '@heroicons/react/24/outline'; // WifiIcon pour badge
+
+
 
 export default function RoutersPage() {
   const [routers, setRouters] = useState([])
@@ -13,7 +16,6 @@ export default function RoutersPage() {
   const [form, setForm] = useState({ name: '', ip: '', location: '', apiUser: '', apiPass: '' })
   const [nameError, setNameError] = useState('')
   const [ipError, setIpError] = useState('')
-  
 
   const load = async () => {
     setRouters(await api.getRouters({ token: localStorage.getItem('gh_token') }))
@@ -23,7 +25,7 @@ export default function RoutersPage() {
     load()
   }, [])
 
-  // ---------- Validation temps réel ----------
+  // Validation temps réel
   useEffect(() => {
     const name = form.name.trim()
     if (!name) {
@@ -75,16 +77,21 @@ export default function RoutersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl">Routers</h2>
-        <button onClick={() => setShowForm(s => !s)} className="bg-primary text-black px-3 py-1 rounded-md">
-          New Router
+      {/* Titre avec badge total routers */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl">Routers</h2>
+          <div className="ml-2 w-10 h-10 flex items-center justify-center rounded-full bg-blue-500 text-white text-sm font-semibold gap-1">
+            {routers.length}
+          </div>
+        </div>
+        <button onClick={() => setShowForm(s => !s)} className=" flex bg-primary text-black px-3 py-1 rounded-md">
+          <WifiIcon className="w-4 h-4"/> New Router
         </button>
       </div>
 
       {showForm && (
         <div className="mt-4 bg-[rgba(6,10,14,0.6)] p-4 rounded-lg-soft">
-          {/* Ligne 1 : Name + IP */}
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
               <input
@@ -106,7 +113,6 @@ export default function RoutersPage() {
             </div>
           </div>
 
-          {/* Ligne 2 : Location + API Username + API Password */}
           <div className="grid grid-cols-3 gap-3">
             <input
               placeholder="Location"
@@ -155,34 +161,32 @@ export default function RoutersPage() {
           <tbody>
             {routers.map(r => (
               <tr key={r.id} className="border-t border-slate-800 text-wrap">
-                <td className="px-3 py-2">{r.name}</td>
+                <td className="px-3 py-2 flex items-center gap-2">
+                  <DevicePhoneMobileIcon className="w-5 h-5 text-blue-400"/>
+                  {r.name}
+                </td>
                 <td className="px-3 py-2">{r.ip}</td>
                 <td className="px-3 py-2">{r.location}</td>
                 <td className="px-3 py-2">
-                                    {r.health === "ok" ? (
-                                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-semibold">
-                                        <CheckCircleIcon className="w-4 h-4" />
-                                        OK
-                                        </div>
-                                    ) : (
-                                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/10 text-red-400 text-xs font-semibold">
-                                        <XCircleIcon className="w-4 h-4" />
-                                        DOWN
-                                        </div>
-                                    )}
-                  </td>
+                  {r.health === "ok" ? (
+                    <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-semibold">
+                      <CheckCircleIcon className="w-4 h-4" />
+                      OK
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/10 text-red-400 text-xs font-semibold">
+                      <XCircleIcon className="w-4 h-4" />
+                      DOWN
+                    </div>
+                  )}
+                </td>
                 <td className="rounded-full whitespace-nowrap flex items-center gap-1 px-3 py-1 ">
-                  <button onClick={() => del(r.id)} className="flex px-2 py-0 gap-1 bg-red-500/10 text-red-500 font-medium rounded-full ">
+                  <button onClick={() => del(r.id)} className="inline-flex px-2 py-0 gap-1 bg-red-500/10 text-red-500 font-medium rounded-full ">
                     <XCircleIcon className="w-5 h-5 -py-2 my-1"/> Delete 
                   </button>
                 </td>
               </tr>
             ))}
-            {routers.length === 0 && (
-              <tr>
-                <td colSpan="5" className="px-3 py-6 text-slate-400 text-center">No routers</td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>

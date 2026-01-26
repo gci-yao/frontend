@@ -1,5 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import api from '../services/api'
+// Import des icônes Heroicons
+import { 
+  CheckCircleIcon, 
+  XCircleIcon, 
+  ClockIcon, 
+  CheckIcon, 
+  XMarkIcon 
+} from '@heroicons/react/24/solid';
+
+import { PhoneIcon } from '@heroicons/react/24/outline';
+
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState([])
@@ -94,71 +105,90 @@ export default function PaymentsPage() {
 
       <div className="mt-4 bg-[rgba(6,10,14,0.6)] p-4 rounded-lg-soft">
         <table className="w-full border-collapse">
-          <thead className="text-slate-400 text-sm">
-            <tr>
-              <th className="px-3 py-2 text-left">ID</th>
-              <th className="px-3 py-2 text-left">Phone</th>
-              <th className="px-3 py-2 text-left">Amount</th>
-              <th className="px-3 py-2 text-left">Plan</th>
-              <th className="px-3 py-2 text-left">Router</th>
-              <th className="px-3 py-2 text-left">Status</th>
-              <th className="px-3 py-2 text-left">Created</th>
-              <th className="px-3 py-2 text-left">Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {payments.map((p) => (
-              <tr key={p.id} className="border-t border-slate-800">
-                <td className="px-3 py-2">{p.id}</td>
-                <td className="px-3 py-2">{p.phone}</td>
-                <td className="px-3 py-2">{p.amount} F</td>
-                <td className="px-3 py-2">{p.plan}</td>
-                <td className="px-3 py-2">{p.router?.name}</td>
-                <td
-                  className={`px-3 py-2 ${
-                    p.status === 'approved'
-                      ? 'text-green-400'
-                      : p.status === 'rejected'
-                      ? 'text-red-400'
-                      : 'text-yellow-400'
-                  }`}
-                >
-                  {p.status}
-                </td>
-                <td className="px-3 py-2">
-                  {new Date(p.created_at).toLocaleString()}
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap">
-                  {p.status === 'pending' && (
-                    <>
-                      <button
-                        onClick={() => confirm(p.id)}
-                        className="mr-2 px-3 py-1 bg-primary text-black rounded-sm"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => reject(p.id)}
-                        className="px-3 py-1 bg-red-600 text-white rounded-sm"
-                      >
-                        Reject
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-
-            {payments.length === 0 && (
+            <thead className="text-slate-200 text-sm backdrop-blur-md bg-transparent border-b border-white/10">
               <tr>
-                <td colSpan="8" className="px-3 py-6 text-slate-400 text-center">
-                  No payments found
-                </td>
+                <th className="px-3 py-2 text-left">ID</th>
+                <th className="px-3 py-2 text-left">Phone</th>
+                <th className="px-3 py-2 text-left">Amount</th>
+                <th className="px-3 py-2 text-left">Plan</th>
+                <th className="px-3 py-2 text-left">Router</th>
+                <th className="px-3 py-2 text-left">Status</th>
+                <th className="px-3 py-2 text-left">Created</th>
+                <th className="px-3 py-2 text-left">Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {payments.map((p) => (
+                <tr key={p.id} className="border-t border-white/10 hover:bg-white/5 transition-colors duration-200">
+                  <td className="px-3 py-2 text-white">{p.id}</td>
+
+                  {/* 📞 PHONE */}
+                  <td className="px-3 py-2 text-blue-400 inline-flex items-center gap-1">
+                    <PhoneIcon className="w-4 h-4" />
+                    {p.phone}
+                  </td>
+
+                  <td className="px-3 py-2 text-white">{p.amount} F</td>
+                  <td className="px-3 py-2 text-white">{p.plan}</td>
+                  <td className="px-3 py-2 text-white">{p.router?.name}</td>
+
+                  {/* 🔥 STATUS BADGE */}
+                  <td className="px-3 py-2">
+                    {p.status === "approved" ? (
+                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-500 text-xs font-semibold">
+                        <CheckCircleIcon className="w-4 h-4" />
+                        Approved
+                      </div>
+                    ) : p.status === "rejected" ? (
+                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/10 text-red-500 text-xs font-semibold">
+                        <XCircleIcon className="w-4 h-4" />
+                        Rejected
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-xs font-semibold">
+                        <ClockIcon className="w-4 h-4" />
+                        Pending
+                      </div>
+                    )}
+                  </td>
+
+                  <td className="px-3 py-2 text-white">{new Date(p.created_at).toLocaleString()}</td>
+
+                  {/* ⚡ ACTIONS */}
+                  <td className="px-3 py-2 whitespace-nowrap inline-flex gap-2">
+                    {p.status === "pending" && (
+                      <>
+                        <button
+                          onClick={() => confirm(p.id)}
+                          className="flex items-center gap-1 px-3 py-1 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors"
+                        >
+                          <CheckIcon className="w-4 h-4" />
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => reject(p.id)}
+                          className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                        >
+                          <XMarkIcon className="w-4 h-4" />
+                          Reject
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
+
+              {payments.length === 0 && (
+                <tr>
+                  <td colSpan="8" className="px-3 py-6 text-slate-400 text-center">
+                    No payments found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
       </div>
     </div>
   )

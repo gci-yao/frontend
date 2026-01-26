@@ -2,6 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import {
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
+} from "@heroicons/react/24/solid";
+
+
+import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend, ResponsiveContainer, BarChart, Bar
 } from 'recharts';
 import { Link } from 'react-router-dom';
@@ -253,10 +260,10 @@ export default function OwnerHistory() {
           <div className="mb-2 flex items-center gap-4 flex-wrap">
             <div>
               Payments — 
-              <span className="text-green-400"> Today: {daily} </span> | 
-              <span className="text-blue-400"> This Week: {weekly} </span> | 
-              <span className="text-yellow-400"> This Month: {monthly} </span> | 
-              <span className="text-red-400"> This Year: {yearly} </span>
+              <span className="inline-flex p-2 bg-yellow-500/10 text-green-400 text-xs font-semibold rounded-md"> Today: {daily} fcfa</span> | 
+              <span className="inline-flex p-2 bg-yellow-500/10 text-blue-400 text-xs font-semibold rounded-md"> This Week: {weekly} fcfa</span> | 
+              <span className="inline-flex p-2 bg-yellow-500/10 text-yellow-400 text-xs font-semibold rounded-md"> This Month: {monthly} fcfa</span> | 
+              <span className="inline-flex p-2 bg-yellow-500/10 text-red-400 text-xs font-semibold rounded-md"> This Year: {yearly} fcfa</span>
             </div>
             <input 
               type="date"
@@ -269,8 +276,8 @@ export default function OwnerHistory() {
         )}
         {activeTab==='sessions' && (
           <div className="mb-2 text-white">
-            <span className="text-green-700">Active: {activeSessions.length} </span>
-            | <span className="text-red-700">Inactive: {inactiveSessions.length}</span> 
+            <span  className="px-3 inline-flex p-2 bg-green-500/10 text-green-400 text-xs font-semibold">Active: {activeSessions.length} </span>
+            | <span  className="px-3 inline-flex p-2 bg-yellow-500/10 text-red-500 text-xs font-semibold">Inactive: {inactiveSessions.length}</span> 
           </div>
         )}
         {activeTab==='sessions' && renderTableContent(filteredSessions)}
@@ -298,14 +305,39 @@ export default function OwnerHistory() {
           </thead>
           <tbody className="text-sm">
             {data.map(s=>(
-              <tr key={s.id} className="border-t border-slate-800">
-                <td className="px-3 py-2">{s.phone}</td>
-                <td className="px-3 py-2">{s.mac}</td>
-                <td className="px-3 py-2">{s.router?.name}</td>
-                <td className="px-3 py-2">{s.commune}</td>
-                <td className="px-3 py-2">{new Date(s.end_time).toLocaleString()}</td>
-                <td className="px-3 py-2">{s.ended ? 'Ended' : s.remainingHours?.toFixed(2)+'h'}</td>
-              </tr>
+              <tr key={s.id} className="border-t border-slate-800 ">
+                <td className="px-3 py-2">
+                    <span  className="px-3 inline-flex p-2 bg-yellow-500/10 text-cyan-400 text-xs font-semibold">{s.phone}</span>
+                </td>
+
+                <td className="px-3 inline-flex p-2 bg-yellow-500/10 text-green-400 text-xs font-semibold">
+                    {s.mac}
+                </td>
+
+                <td className="px-2 py-2">
+                    <span className="px-3 inline-flex p-2 bg-yellow-400/10  text-xs font-semibold">
+                        {s.router?.name}
+                    </span>  
+                </td>
+
+                <td className="px-4 inline-flex p-2 bg-yellow-500/10  text-xs font-semibold">
+                    {s.commune}
+                </td>
+
+                {/* ✅ AVANT-DERNIER TD ARRANGÉ COMME MAC / COMMUNE */}
+                <td className="px-3">
+                    <span className="inline-flex p-2 bg-yellow-500/10 text-red-400 text-xs font-semibold rounded-md">
+                    {new Date(s.end_time).toLocaleString()}
+                    </span>
+                </td>
+
+                <td className="px-3 py-2">
+
+                    <span className="inline-flex p-2 bg-yellow-500/10 text-green-300 text-xs font-semibold rounded-md">
+                    {s.ended ? "Ended" : s.remainingHours?.toFixed(2) + "h"}</span>
+                </td>
+            </tr>
+
             ))}
             {!data.length && (
               <tr>
@@ -321,18 +353,41 @@ export default function OwnerHistory() {
           <thead className="text-slate-400 text-sm bg-slate-900">
             <tr>
               <th className="px-3 py-2 text-left">Name</th>
-              <th className="px-3 py-2 text-left">IP</th>
-              <th className="px-3 py-2 text-left">Location</th>
+              <th className="px-3 py-2 text-left">
+                IP
+              </th>
+              <th className="px-3 py-2 text-left">
+                Location
+              </th>
               <th className="px-3 py-2 text-left">Health</th>
             </tr>
           </thead>
           <tbody className="text-sm">
             {data.map(r=>(
               <tr key={r.id} className="border-t border-slate-800">
-                <td className="px-3 py-2">{r.name}</td>
-                <td className="px-3 py-2">{r.ip}</td>
-                <td className="px-3 py-2">{r.location}</td>
-                <td className={`px-3 py-2 ${r.health==='ok'?'text-green-400':'text-red-400'}`}>{r.health}</td>
+                <td className="px-3 py-2">
+                    <span className="inline-flex p-2 bg-yellow-200/10  text-xs font-semibold rounded-md"> {r.name}</span>
+                </td>
+                <td className="px-3 py-2">
+                    <span className="inline-flex p-2 bg-yellow-300/10 text-yellow-400 text-xs font-semibold rounded-md"> {r.ip}</span>
+                </td>
+                <td className="px-3 py-2">
+                    <span className="inline-flex p-2 bg-yellow-300/10 text-xs font-semibold rounded-md">{r.location}</span>
+                </td>
+                <td className="px-3 py-2">
+                    {r.health === "ok" ? (
+                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-semibold">
+                        <CheckCircleIcon className="w-4 h-4" />
+                        OK
+                        </div>
+                    ) : (
+                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/10 text-red-400 text-xs font-semibold">
+                        <XCircleIcon className="w-4 h-4" />
+                        DOWN
+                        </div>
+                    )}
+                </td>
+
               </tr>
             ))}
             {!data.length && (
@@ -365,8 +420,27 @@ export default function OwnerHistory() {
                 <td className="px-3 py-2">{p.amount} F</td>
                 <td className="px-3 py-2">{p.plan}</td>
                 <td className="px-3 py-2">{p.router?.name}</td>
-                <td className={`px-3 py-2 ${p.status==='approved'?'text-green-400':p.status==='rejected'?'text-red-400':'text-yellow-400'}`}>{p.status}</td>
+                <td className="px-3 py-2">
+                    {p.status === "approved" ? (
+                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-500 text-xs font-semibold">
+                        <CheckCircleIcon className="w-4 h-4" />
+                        Approved
+                        </div>
+                    ) : p.status === "rejected" ? (
+                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/10 text-red-500 text-xs font-semibold">
+                        <XCircleIcon className="w-4 h-4" />
+                        Rejected
+                        </div>
+                    ) : (
+                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-xs font-semibold">
+                        <ClockIcon className="w-4 h-4" />
+                        Pending
+                        </div>
+                    )}
+                </td>
+
                 <td className="px-3 py-2">{new Date(p.created_at).toLocaleString()}</td>
+                
               </tr>
             ))}
             {!data.length && (

@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import api from '../services/api'
+import { 
+  CheckCircleIcon, 
+  XCircleIcon, 
+  CheckIcon, 
+
+} from '@heroicons/react/24/solid';
 
 export default function RoutersPage() {
   const [routers, setRouters] = useState([])
@@ -7,6 +13,7 @@ export default function RoutersPage() {
   const [form, setForm] = useState({ name: '', ip: '', location: '', apiUser: '', apiPass: '' })
   const [nameError, setNameError] = useState('')
   const [ipError, setIpError] = useState('')
+  
 
   const load = async () => {
     setRouters(await api.getRouters({ token: localStorage.getItem('gh_token') }))
@@ -43,7 +50,7 @@ export default function RoutersPage() {
       await api.createRouter({
         name: form.name,
         ip: form.ip,
-        location: form.location,
+        location: form.location.toLowerCase(),
         api_user: form.apiUser,
         api_pass: form.apiPass,
         token: localStorage.getItem('gh_token')
@@ -147,13 +154,27 @@ export default function RoutersPage() {
           </thead>
           <tbody>
             {routers.map(r => (
-              <tr key={r.id} className="border-t border-slate-800">
+              <tr key={r.id} className="border-t border-slate-800 text-wrap">
                 <td className="px-3 py-2">{r.name}</td>
                 <td className="px-3 py-2">{r.ip}</td>
                 <td className="px-3 py-2">{r.location}</td>
-                <td className={`px-3 py-2 ${r.health === 'ok' ? 'text-green-400' : 'text-red-400'}`}>{r.health}</td>
-                <td className="px-3 py-2 whitespace-nowrap">
-                  <button onClick={() => del(r.id)} className="px-3 py-1 bg-red-600 rounded-sm text-white">Delete</button>
+                <td className="px-3 py-2">
+                                    {r.health === "ok" ? (
+                                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-semibold">
+                                        <CheckCircleIcon className="w-4 h-4" />
+                                        OK
+                                        </div>
+                                    ) : (
+                                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/10 text-red-400 text-xs font-semibold">
+                                        <XCircleIcon className="w-4 h-4" />
+                                        DOWN
+                                        </div>
+                                    )}
+                  </td>
+                <td className="rounded-full whitespace-nowrap flex items-center gap-1 px-3 py-1 ">
+                  <button onClick={() => del(r.id)} className="flex px-2 py-0 gap-1 bg-red-500/10 text-red-500 font-medium rounded-full ">
+                    <XCircleIcon className="w-5 h-5 -py-2 my-1"/> Delete 
+                  </button>
                 </td>
               </tr>
             ))}

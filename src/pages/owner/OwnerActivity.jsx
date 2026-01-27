@@ -320,7 +320,7 @@ export default function OwnerHistory() {
                     </span>  
                 </td>
 
-                <td className="px-4 inline-flex p-2 bg-yellow-500/10  text-xs font-semibold">
+                <td className=" px-4 inline-flex p-2 my-2 bg-yellow-500/10  text-xs font-semibold">
                     {s.commune}
                 </td>
 

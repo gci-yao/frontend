@@ -7,7 +7,6 @@ import {
   ClockIcon,
 } from "@heroicons/react/24/solid";
 
-
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend, ResponsiveContainer, BarChart, Bar
 } from 'recharts';
@@ -25,6 +24,8 @@ export default function OwnerHistory() {
   const [activeTab, setActiveTab] = useState('sessions');
   const [search, setSearch] = useState('');
   const [paymentDateFilter, setPaymentDateFilter] = useState('');
+  const [expiredNotifs, setExpiredNotifs] = useState([]);
+
 
   /** 🔹 Minimum loader delay */
   useEffect(() => {
@@ -42,7 +43,20 @@ export default function OwnerHistory() {
           api.getMyRouters({ token }),
           api.getPayments({ token }),
         ]);
-        setSessions(s || []);
+
+        const now = Date.now();
+        const normalizedSessions = (s || []).map(sess => {
+          const end = new Date(sess.end_time).getTime();
+          const expired = now >= end;
+
+          return {
+            ...sess,
+            ended: expired,
+            remainingHours: expired ? 0 : Math.max(0, (end - now) / 3600000)
+          };
+        });
+
+        setSessions(normalizedSessions);
         setRouters(r || []);
         setPayments(p || []);
       } catch (err) {
@@ -57,21 +71,46 @@ export default function OwnerHistory() {
     loadData();
   }, [token]);
 
-  /** 🔹 Update remaining hours every minute */
+  /** 🔹 Update remaining hours every minute + auto-expire */
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSessions(prev =>
-        prev.map(s => {
-          if (!s.ended) {
-            const remaining = Math.max(0, (new Date(s.end_time) - Date.now()) / 3600000);
-            return { ...s, remainingHours: remaining };
-          }
+  const interval = setInterval(() => {
+    setSessions(prev =>
+      prev.map(s => {
+        const end = new Date(s.end_time).getTime();
+        const now = Date.now();
+
+        // 🔒 Si déjà expirée → on ne touche plus jamais
+        if (s.ended) {
           return s;
-        })
-      );
-    }, 60000);
-    return () => clearInterval(interval);
-  }, []);
+        }
+
+        // 🔴 Si elle expire maintenant
+        if (now >= end) {
+          setExpiredNotifs(prevNotifs => [
+            ...prevNotifs,
+            `Session ${s.phone} expired`
+          ]);
+
+          return {
+            ...s,
+            ended: true,
+            remainingHours: 0
+          };
+        }
+
+        // 🟢 Sinon elle est encore active
+        const remaining = Math.max(0, (end - now) / 3600000);
+        return {
+          ...s,
+          remainingHours: remaining
+        };
+      })
+    );
+  }, 60000);
+
+  return () => clearInterval(interval);
+}, []);
+
 
   /** 🔹 Tabs */
   const renderTabs = () => (
@@ -116,7 +155,7 @@ export default function OwnerHistory() {
             p.plan?.toLowerCase().includes(q);
           const created = new Date(p.created_at);
           const matchesStart = paymentDateFilter ? created >= new Date(paymentDateFilter) : true;
-          const matchesEnd = true; // On peut étendre si tu veux une vraie plage start/end
+          const matchesEnd = true;
           return matchesSearch && matchesStart && matchesEnd;
         });
       default: return data;
@@ -182,31 +221,30 @@ export default function OwnerHistory() {
   };
 
   const renderPaymentsChart = () => {
-  if (!payments.length) return <div className="text-slate-400">No payments</div>;
+    if (!payments.length) return <div className="text-slate-400">No payments</div>;
 
-  // 🔹 Filtrer uniquement les paiements approved
-  const approvedPayments = filterData(payments).filter(p => p.status === 'approved');
+    const approvedPayments = filterData(payments).filter(p => p.status === 'approved');
 
-  const grouped = {};
-  approvedPayments.forEach(p => {
-    const date = new Date(p.created_at).toLocaleDateString();
-    grouped[date] = (grouped[date] || 0) + Number(p.amount);
-  });
-  
-  const data = Object.entries(grouped).map(([date, amount]) => ({ date, amount }));
+    const grouped = {};
+    approvedPayments.forEach(p => {
+      const date = new Date(p.created_at).toLocaleDateString();
+      grouped[date] = (grouped[date] || 0) + Number(p.amount);
+    });
+    
+    const data = Object.entries(grouped).map(([date, amount]) => ({ date, amount }));
 
-  return (
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data}>
-        <CartesianGrid stroke="#2c2c2c" />
-        <XAxis dataKey="date" />
-        <YAxis />
-        <Tooltip formatter={v => `${v.toLocaleString()} F`} />
-        <Bar dataKey="amount" fill="#3b82f6" />
-      </BarChart>
-    </ResponsiveContainer>
-  );
-};
+    return (
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={data}>
+          <CartesianGrid stroke="#2c2c2c" />
+          <XAxis dataKey="date" />
+          <YAxis />
+          <Tooltip formatter={v => `${v.toLocaleString()} F`} />
+          <Bar dataKey="amount" fill="#3b82f6" />
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  };
 
   const renderChart = () => {
     switch(activeTab){
@@ -228,28 +266,26 @@ export default function OwnerHistory() {
     const approvedPayments = filteredPayments.filter(p => p.status === 'approved');
 
     const daily = approvedPayments
-    .filter(p => new Date(p.created_at).toDateString() === now.toDateString())
-    .reduce((sum, p) => sum + Number(p.amount), 0);
+      .filter(p => new Date(p.created_at).toDateString() === now.toDateString())
+      .reduce((sum, p) => sum + Number(p.amount), 0);
 
     const startWeek = new Date(now); 
     startWeek.setDate(now.getDate() - now.getDay());
 
     const weekly = approvedPayments
-    .filter(p => new Date(p.created_at) >= startWeek)
-    .reduce((sum, p) => sum + Number(p.amount), 0);
+      .filter(p => new Date(p.created_at) >= startWeek)
+      .reduce((sum, p) => sum + Number(p.amount), 0);
 
     const monthly = approvedPayments
-    .filter(p => { 
+      .filter(p => { 
         const d = new Date(p.created_at); 
         return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); 
-    })
-    .reduce((sum, p) => sum + Number(p.amount), 0);
+      })
+      .reduce((sum, p) => sum + Number(p.amount), 0);
 
     const yearly = approvedPayments
-    .filter(p => new Date(p.created_at).getFullYear() === now.getFullYear())
-    .reduce((sum, p) => sum + Number(p.amount), 0);
-
-
+      .filter(p => new Date(p.created_at).getFullYear() === now.getFullYear())
+      .reduce((sum, p) => sum + Number(p.amount), 0);
 
     const activeSessions = sessions.filter(s => !s.ended);
     const inactiveSessions = sessions.filter(s => s.ended);
@@ -289,170 +325,188 @@ export default function OwnerHistory() {
 
   /** Helper to render table content dynamically */
   const renderTableContent = (data) => {
-  switch(activeTab){
-    case 'sessions':
-      return (
-        <table className="w-full table-auto border-collapse mb-4">
-          <thead className="text-slate-400 text-sm bg-slate-900">
-            <tr>
-              <th className="px-3 py-2 text-left">Phone</th>
-              <th className="px-3 py-2 text-left">MAC</th>
-              <th className="px-3 py-2 text-left">Router</th>
-              <th className="px-3 py-2 text-left">Commune</th>
-              <th className="px-3 py-2 text-left">End Time</th>
-              <th className="px-3 py-2 text-left">Remaining</th>
-            </tr>
-          </thead>
-          <tbody className="text-sm">
-            {data.map(s=>(
-              <tr key={s.id} className="border-t border-slate-800 ">
-                <td className="px-3 py-2">
+    switch(activeTab){
+      case 'sessions':
+        return (
+          <table className="w-full table-auto border-collapse mb-4">
+            <thead className="text-slate-400 text-sm bg-slate-900">
+              <tr>
+                <th className="px-3 py-2 text-left">Phone</th>
+                <th className="px-3 py-2 text-left">MAC</th>
+                <th className="px-3 py-2 text-left">Router</th>
+                <th className="px-3 py-2 text-left">Commune</th>
+                <th className="px-3 py-2 text-left">End Time</th>
+                <th className="px-3 py-2 text-left">Remaining</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm">
+              {data.map(s=>(
+                <tr
+                    key={s.id}
+                    className={`border-t border-slate-800 ${
+                        s.ended ? 'opacity-50 grayscale' : ''
+                    }`}
+                >
+
+                  <td className="px-3 py-2">
                     <span  className="px-3 inline-flex p-2 bg-yellow-500/10 text-cyan-400 text-xs font-semibold">{s.phone}</span>
-                </td>
+                  </td>
 
-                <td className="px-3 inline-flex p-2 bg-yellow-500/10 text-green-400 text-xs font-semibold">
+                  <td className="px-3 inline-flex p-2 bg-yellow-500/10 text-green-400 text-xs font-semibold">
                     {s.mac}
-                </td>
+                  </td>
 
-                <td className="px-2 py-2">
+                  <td className="px-2 py-2">
                     <span className="px-3 inline-flex p-2 bg-yellow-400/10  text-xs font-semibold">
-                        {s.router?.name}
+                      {s.router?.name}
                     </span>  
-                </td>
+                  </td>
 
-                <td className=" px-4 inline-flex p-2 my-2 bg-yellow-500/10  text-xs font-semibold">
+                  <td className=" px-4 inline-flex p-2 my-2 bg-yellow-500/10  text-xs font-semibold">
                     {s.commune}
-                </td>
+                  </td>
 
-                {/* ✅ AVANT-DERNIER TD ARRANGÉ COMME MAC / COMMUNE */}
-                <td className="px-3">
-                    <span className="inline-flex p-2 bg-yellow-500/10 text-red-400 text-xs font-semibold rounded-md">
-                    {new Date(s.end_time).toLocaleString()}
-                    </span>
-                </td>
-
-                <td className="px-3 py-2">
-
-                    <span className="inline-flex p-2 bg-yellow-500/10 text-green-300 text-xs font-semibold rounded-md">
-                    {s.ended ? "Ended" : s.remainingHours?.toFixed(2) + "h"}</span>
-                </td>
-            </tr>
-
-            ))}
-            {!data.length && (
-              <tr>
-                <td colSpan={6} className="py-6 text-slate-400 text-center">No sessions</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      );
-    case 'routers':
-      return (
-        <table className="w-full table-auto border-collapse mb-4">
-          <thead className="text-slate-400 text-sm bg-slate-900">
-            <tr>
-              <th className="px-3 py-2 text-left">Name</th>
-              <th className="px-3 py-2 text-left">
-                IP
-              </th>
-              <th className="px-3 py-2 text-left">
-                Location
-              </th>
-              <th className="px-3 py-2 text-left">Health</th>
-            </tr>
-          </thead>
-          <tbody className="text-sm">
-            {data.map(r=>(
-              <tr key={r.id} className="border-t border-slate-800">
-                <td className="px-3 py-2">
-                    <span className="inline-flex p-2 bg-yellow-200/10  text-xs font-semibold rounded-md"> {r.name}</span>
-                </td>
-                <td className="px-3 py-2">
-                    <span className="inline-flex p-2 bg-yellow-300/10 text-yellow-400 text-xs font-semibold rounded-md"> {r.ip}</span>
-                </td>
-                <td className="px-3 py-2">
-                    <span className="inline-flex p-2 bg-yellow-300/10 text-xs font-semibold rounded-md">{r.location}</span>
-                </td>
-                <td className="px-3 py-2">
-                    {r.health === "ok" ? (
-                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-semibold">
-                        <CheckCircleIcon className="w-4 h-4" />
-                        OK
-                        </div>
-                    ) : (
-                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/10 text-red-400 text-xs font-semibold">
-                        <XCircleIcon className="w-4 h-4" />
-                        DOWN
-                        </div>
-                    )}
-                </td>
-
-              </tr>
-            ))}
-            {!data.length && (
-              <tr>
-                <td colSpan={4} className="py-6 text-slate-400 text-center">No routers</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      );
-    case 'payments':
-      return (
-        <table className="w-full table-auto border-collapse mb-4">
-          <thead className="text-slate-400 text-sm bg-slate-900">
-            <tr>
-              <th className="px-3 py-2 text-left">ID</th>
-              <th className="px-3 py-2 text-left">Phone</th>
-              <th className="px-3 py-2 text-left">Amount</th>
-              <th className="px-3 py-2 text-left">Plan</th>
-              <th className="px-3 py-2 text-left">Router</th>
-              <th className="px-3 py-2 text-left">Status</th>
-              <th className="px-3 py-2 text-left">Created</th>
-            </tr>
-          </thead>
-          <tbody className="text-sm">
-            {data.map(p=>(
-              <tr key={p.id} className="border-t border-slate-800">
-                <td className="px-3 py-2">{p.id}</td>
-                <td className="px-3 py-2">{p.phone}</td>
-                <td className="px-3 py-2">{p.amount} F</td>
-                <td className="px-3 py-2">{p.plan}</td>
-                <td className="px-3 py-2">{p.router?.name}</td>
-                <td className="px-3 py-2">
-                    {p.status === "approved" ? (
-                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-500 text-xs font-semibold">
-                        <CheckCircleIcon className="w-4 h-4" />
-                        Approved
-                        </div>
-                    ) : p.status === "rejected" ? (
+                  <td className="px-3">
+                    {s.ended ? (
                         <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/10 text-red-500 text-xs font-semibold">
                         <XCircleIcon className="w-4 h-4" />
-                        Rejected
+                        Expired
                         </div>
                     ) : (
-                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-xs font-semibold">
+                        <span className="inline-flex p-2 bg-yellow-500/10 text-red-400 text-xs font-semibold rounded-md">
+                        {new Date(s.end_time).toLocaleString()}
+                        </span>
+                    )}
+                    </td>
+
+                    <td className="px-3 py-2">
+                    {s.ended ? (
+                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/10 text-red-500 text-xs font-semibold">
+                        <XCircleIcon className="w-4 h-4" />
+                        X
+                        </div>
+                    ) : (
+                        <span className="inline-flex p-2 bg-yellow-500/10 text-green-300 text-xs font-semibold rounded-md">
+                        {s.remainingHours?.toFixed(2)}h
+                        </span>
+                    )}
+                    </td>
+
+                </tr>
+              ))}
+              {!data.length && (
+                <tr>
+                  <td colSpan={6} className="py-6 text-slate-400 text-center">No sessions</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        );
+
+      case 'routers':
+        return (
+          <table className="w-full table-auto border-collapse mb-4">
+            <thead className="text-slate-400 text-sm bg-slate-900">
+              <tr>
+                <th className="px-3 py-2 text-left">Name</th>
+                <th className="px-3 py-2 text-left">IP</th>
+                <th className="px-3 py-2 text-left">Location</th>
+                <th className="px-3 py-2 text-left">Health</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm">
+              {data.map(r=>(
+                <tr key={r.id} className="border-t border-slate-800">
+                  <td className="px-3 py-2">
+                    <span className="inline-flex p-2 bg-yellow-200/10  text-xs font-semibold rounded-md"> {r.name}</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="inline-flex p-2 bg-yellow-300/10 text-yellow-400 text-xs font-semibold rounded-md"> {r.ip}</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="inline-flex p-2 bg-yellow-300/10 text-xs font-semibold rounded-md">{r.location}</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    {r.health === "ok" ? (
+                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-semibold">
+                        <CheckCircleIcon className="w-4 h-4" />
+                        OK
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/10 text-red-400 text-xs font-semibold">
+                        <XCircleIcon className="w-4 h-4" />
+                        DOWN
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {!data.length && (
+                <tr>
+                  <td colSpan={4} className="py-6 text-slate-400 text-center">No routers</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        );
+
+      case 'payments':
+        return (
+          <table className="w-full table-auto border-collapse mb-4">
+            <thead className="text-slate-400 text-sm bg-slate-900">
+              <tr>
+                <th className="px-3 py-2 text-left">ID</th>
+                <th className="px-3 py-2 text-left">Phone</th>
+                <th className="px-3 py-2 text-left">Amount</th>
+                <th className="px-3 py-2 text-left">Plan</th>
+                <th className="px-3 py-2 text-left">Router</th>
+                <th className="px-3 py-2 text-left">Status</th>
+                <th className="px-3 py-2 text-left">Created</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm">
+              {data.map(p=>(
+                <tr key={p.id} className="border-t border-slate-800">
+                  <td className="px-3 py-2">{p.id}</td>
+                  <td className="px-3 py-2">{p.phone}</td>
+                  <td className="px-3 py-2">{p.amount} F</td>
+                  <td className="px-3 py-2">{p.plan}</td>
+                  <td className="px-3 py-2">{p.router?.name}</td>
+                  <td className="px-3 py-2">
+                    {p.status === "approved" ? (
+                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-500 text-xs font-semibold">
+                        <CheckCircleIcon className="w-4 h-4" />
+                        Approved
+                      </div>
+                    ) : p.status === "rejected" ? (
+                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/10 text-red-500 text-xs font-semibold">
+                        <XCircleIcon className="w-4 h-4" />
+                        Rejected
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-xs font-semibold">
                         <ClockIcon className="w-4 h-4" />
                         Pending
-                        </div>
+                      </div>
                     )}
-                </td>
+                  </td>
 
-                <td className="px-3 py-2">{new Date(p.created_at).toLocaleString()}</td>
-                
-              </tr>
-            ))}
-            {!data.length && (
-              <tr>
-                <td colSpan={7} className="py-6 text-slate-400 text-center">No payments</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      );
-  }
-};
+                  <td className="px-3 py-2">{new Date(p.created_at).toLocaleString()}</td>
+                </tr>
+              ))}
+              {!data.length && (
+                <tr>
+                  <td colSpan={7} className="py-6 text-slate-400 text-center">No payments</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   /** 🔹 Loader with animated letters */
   if (loading || !minLoadingDone) {
@@ -477,6 +531,22 @@ export default function OwnerHistory() {
       </div>
     );
   }
+
+//   Notification of expired sessions 
+
+  {expiredNotifs.length > 0 && (
+  <div className="fixed top-4 right-4 z-50 space-y-2">
+    {expiredNotifs.map((msg, i) => (
+      <div
+        key={i}
+        className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-2 rounded-lg shadow-lg animate-pulse"
+      >
+        {msg}
+      </div>
+    ))}
+  </div>
+)}
+
 
   return (
     <div className="p-4">

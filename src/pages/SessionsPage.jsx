@@ -9,6 +9,7 @@ import {
   MapPinIcon,
   CalendarDaysIcon,
   ClockIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/solid";
 
 export default function SessionsPage() {
@@ -16,6 +17,7 @@ export default function SessionsPage() {
   const [routers, setRouters] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("") // <-- état pour la recherche
+  const [expiredNotifs, setExpiredNotifs] = useState([]) // <-- notifications expiration
 
   const loadRouters = async () => {
     const r = await api.getRouters({ token: localStorage.getItem('gh_token') })
@@ -24,7 +26,20 @@ export default function SessionsPage() {
 
   const loadSessions = async () => {
     const s = await api.getSessions({ token: localStorage.getItem('gh_token') })
-    setSessions(s)
+    const now = Date.now()
+
+    // 🔒 Normalisation : une session expirée reste expirée
+    const normalized = (s || []).map(sess => {
+      const end = new Date(sess.end_time).getTime()
+      const expired = now >= end
+
+      return {
+        ...sess,
+        ended: sess.ended || expired
+      }
+    })
+
+    setSessions(normalized)
   }
 
   useEffect(() => {
@@ -33,7 +48,9 @@ export default function SessionsPage() {
       await loadSessions()
       setLoading(false)
     }
+
     init()
+
     const t = setInterval(loadSessions, 8000) // auto refresh
     return () => clearInterval(t)
   }, [])
@@ -49,24 +66,57 @@ export default function SessionsPage() {
   }
 
   if (loading) return (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent border-b-transparent rounded-full animate-spin"></div>
-  </div>
-)
-
-
-  // Filtrage des sessions par numéro de téléphone
-  const filteredSessions = sessions.filter(s =>
-    s.phone.toLowerCase().includes(search.toLowerCase())
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent border-b-transparent rounded-full animate-spin"></div>
+    </div>
   )
+
+  // 🔹 Recherche globale multi-champs + Active/Expired
+  // Sessions visibles et filtrées par recherche
+    const filteredSessions = sessions.filter(s => {
+      const q = search.toLowerCase()
+      const status = s.ended ? "expired" : "active"
+      return (
+        s.phone?.toLowerCase().includes(q) ||
+        s.mac?.toLowerCase().includes(q) ||
+        s.router?.name?.toLowerCase().includes(q) ||
+        s.commune?.toLowerCase().includes(q) ||
+        status.includes(q)
+      )
+    })
+
+    // 🔹 Badge = nombre de sessions actives dans le filtre courant
+    const activeFilteredCount = filteredSessions.filter(s => !s.ended).length
+    // 3️⃣ Nombre de sessions expirées dans le filtre
+    const expiredFilteredCount = filteredSessions.filter(s => s.ended).length
+
 
   return (
     <div>
+
+      {/* 🔔 Notifications expiration */}
+      {expiredNotifs.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 space-y-2">
+          {expiredNotifs.map((msg, i) => (
+            <div
+              key={i}
+              className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-2 rounded-lg shadow-lg animate-pulse"
+            >
+              {msg}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Titre avec badge total */}
       <div className="flex items-center gap-2">
         <h2 className="text-2xl">Sessions</h2>
         <div className="ml-2 w-8 h-8 flex items-center justify-center rounded-full bg-blue-500 text-white text-sm font-semibold">
-          {filteredSessions.length}
+          {activeFilteredCount }
+        </div>
+        {/* 🔹 Badge expiré */}
+        <div className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500 text-white text-sm font-semibold">
+          {expiredFilteredCount}
         </div>
       </div>
 
@@ -74,7 +124,7 @@ export default function SessionsPage() {
       <div className="mt-2 mb-4">
         <input
           type="text"
-          placeholder="Search by number phone ..."
+          placeholder="Search by phone, MAC, router, commune or Active/Expired..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full p-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-blue-500"
@@ -103,82 +153,112 @@ export default function SessionsPage() {
           </thead>
 
           <tbody>
-            {filteredSessions.map((s) => (
-              <tr key={s.id} className="border-t border-slate-800">
-                <td className="px-3 py-2">
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-semibold">
-                    <PhoneIcon className="w-4 h-4" />
-                    {s.phone}
-                  </span>
-                </td>
-                <td className="px-3 py-2">
-                  <span className="inline-flex items-center gap-1 text-white text-xs font-medium">
-                    <CpuChipIcon className="w-4 h-4 text-green-400" />
-                    {s.mac}
-                  </span>
-                </td>
+            {filteredSessions.map((s) => {
+              const end = new Date(s.end_time).getTime()
+              const now = Date.now()
+              const expired = s.ended || now >= end
+              const remainingHours = Math.max(
+                0,
+                Math.round((end - now) / 3600000)
+              )
 
-               <td className="px-3 py-2">
-                  <span className="inline-flex items-center gap-1 text-white text-xs font-medium">
-                    <WifiIcon className="w-4 h-4 text-primary" />
-                    {s.router?.name || "—"}
-                  </span>
-               </td>
+              return (
+                <tr
+                  key={s.id}
+                  className={`border-t border-slate-800 ${
+                    expired ? "opacity-50 grayscale" : ""
+                  }`}
+                >
+                  <td className="px-3 py-2">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-semibold">
+                      <PhoneIcon className="w-4 h-4" />
+                      {s.phone}
+                    </span>
+                  </td>
 
-                <td className="px-3 py-2">
-                  <span className="inline-flex items-center gap-1 text-white text-xs font-medium">
-                    <MapPinIcon className="w-4 h-4 text-yellow-400" />
-                    {s.commune}
-                  </span>
-                </td>
+                  <td className="px-3 py-2">
+                    <span className="inline-flex items-center gap-1 text-white text-xs font-medium">
+                      <CpuChipIcon className="w-4 h-4 text-green-400" />
+                      {s.mac}
+                    </span>
+                  </td>
 
-                <td className="px-3 py-2">
-                  <span className="inline-flex items-center gap-1 text-white text-xs font-medium">
-                    <CalendarDaysIcon className="w-4 h-4 text-purple-400" />
-                    {new Date(s.end_time).toLocaleString()}
-                  </span>
-                </td>
+                  <td className="px-3 py-2">
+                    <span className="inline-flex items-center gap-1 text-white text-xs font-medium">
+                      <WifiIcon className="w-4 h-4 text-primary" />
+                      {s.router?.name || "—"}
+                    </span>
+                  </td>
 
-                <td className="px-3 py-2">
-                  <span
-                    className={`inline-flex items-center gap-1 text-xs font-semibold ${
-                      s.ended ? "text-red-400" : "text-green-400"
-                    }`}
-                  >
-                    <ClockIcon className="w-4 h-4" />
-                    {s.ended
-                      ? "Ended"
-                      : `${Math.max(
-                          0,
-                          Math.round((new Date(s.end_time) - Date.now()) / 3600000)
-                        )}h`}
-                  </span>
-                </td>
+                  <td className="px-3 py-2">
+                    <span className="inline-flex items-center gap-1 text-white text-xs font-medium">
+                      <MapPinIcon className="w-4 h-4 text-yellow-400" />
+                      {s.commune}
+                    </span>
+                  </td>
 
-                <td className="px-3 py-2 whitespace-nowrap">
-                  {!s.ended && (
-                    <button
-                      onClick={() => extend(s.id)}
-                      className="mr-2 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-500 text-xs font-semibold hover:bg-green-500/20 transition"
-                    >
-                      <ArrowPathIcon className="w-4 h-4" />
-                      Extend
-                    </button>
-                  )}
+                  {/* End Time */}
+                  <td className="px-3 py-2">
+                    {expired ? (
+                      <span className="inline-flex items-center gap-1 text-red-500 text-xs font-semibold">
+                        <XCircleIcon className="w-4 h-4" />
+                        Expired
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-white text-xs font-medium">
+                        <CalendarDaysIcon className="w-4 h-4 text-purple-400" />
+                        {new Date(s.end_time).toLocaleString()}
+                      </span>
+                    )}
+                  </td>
 
-                  {!s.ended && (
-                    <button
-                      onClick={() => terminate(s.id)}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/10 text-red-500 text-xs font-semibold hover:bg-red-500/20 transition"
-                    >
-                      <StopCircleIcon className="w-4 h-4" />
-                      Terminate
-                    </button>
-                  )}
-                </td>
+                  {/* Remaining */}
+                  <td className="px-3 py-2">
+                    {expired ? (
+                      <span className="inline-flex items-center gap-1 text-red-500 text-xs font-semibold">
+                        <XCircleIcon className="w-4 h-4" />
+                        X
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-green-400 text-xs font-semibold">
+                        <ClockIcon className="w-4 h-4" />
+                        {remainingHours}h
+                      </span>
+                    )}
+                  </td>
 
-              </tr>
-            ))}
+                  {/* Actions */}
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    {!expired && (
+                      <>
+                        <button
+                          onClick={() => extend(s.id)}
+                          className="mr-2 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/10 text-green-500 text-xs font-semibold hover:bg-green-500/20 transition"
+                        >
+                          <ArrowPathIcon className="w-4 h-4" />
+                          Extend
+                        </button>
+
+                        <button
+                          onClick={() => terminate(s.id)}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/10 text-red-500 text-xs font-semibold hover:bg-red-500/20 transition"
+                        >
+                          <StopCircleIcon className="w-4 h-4" />
+                          Terminate
+                        </button>
+                      </>
+                    )}
+
+                    {expired && (
+                      <span className="inline-flex items-center gap-1 text-slate-500 text-xs font-semibold">
+                        <XCircleIcon className="w-4 h-4" />
+                        No actions
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
 
             {filteredSessions.length === 0 && (
               <tr>
@@ -189,7 +269,6 @@ export default function SessionsPage() {
             )}
           </tbody>
         </table>
-
       </div>
     </div>
   )

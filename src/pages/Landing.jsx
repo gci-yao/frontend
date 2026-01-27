@@ -107,7 +107,7 @@ export default function LandingWithDraggableAI() {
       sendAiMessage("Oooh. Je suis désolé, je peux vous aider à Login, Register, Call, Email ou WhatsApp !");
       highlightButton(injureRef);
     } else {
-      sendAiMessage("Je peux vous aider à Login, Register, Call, Email ou WhatsApp !");
+      sendAiMessage("Je peux vous aider à Login, Register, Call, Email ou WhatsApp ! salut !");
     }
   };
 

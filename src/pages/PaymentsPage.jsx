@@ -80,20 +80,40 @@ export default function PaymentsPage() {
   // -----------------------------
   // Paiements filtrés pour la recherche / badge
   // -----------------------------
-  const filteredPayments = payments.filter(p =>
-    p.phone.toLowerCase().includes(filters.phone.toLowerCase())
-  )
+  // Paiements filtrés selon la recherche globale sur le téléphone
+    const filteredPayments = payments.filter(p =>
+      p.phone.toLowerCase().includes(filters.phone.toLowerCase())
+    )
+
+    // 🔹 Comptage dynamique par status
+    const approvedCount = filteredPayments.filter(p => p.status === "approved").length
+    const pendingCount = filteredPayments.filter(p => p.status === "pending").length
+    const rejectedCount = filteredPayments.filter(p => p.status === "rejected").length
+
 
   return (
     
     <div>
-      {/* Titre avec badge total */}
-      <div className="flex items-center gap-2">
+          {/* Titre avec badge total */}
+      <div className="flex items-center gap-2 mb-4">
         <h2 className="text-2xl">Payments</h2>
-        <div className="ml-2 w-8 h-8 flex items-center justify-center rounded-full bg-blue-500 text-white text-sm font-semibold">
-          {payments.filter(p => p.status === "approved").length}
+
+        {/* 🔹 Approved */}
+        <div className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-500 text-white text-sm font-semibold">
+          {approvedCount}
+        </div>
+
+        {/* 🔹 Pending */}
+        <div className="w-8 h-8 flex items-center justify-center rounded-full bg-yellow-500 text-white text-sm font-semibold">
+          {pendingCount}
+        </div>
+
+        {/* 🔹 Rejected */}
+        <div className="w-8 h-8 flex items-center justify-center rounded-full bg-red-500 text-white text-sm font-semibold">
+          {rejectedCount}
         </div>
       </div>
+
 
 
       {routers.length === 0 && (

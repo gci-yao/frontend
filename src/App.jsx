@@ -18,6 +18,8 @@ import ProtectedRoute from './components/guards/ProtectedRoute'
 import RoleGuard from './components/guards/RoleGuard'
 import Layout from './components/layout/Layout'
 import SuperHistory from './pages/super/SuperHistory'
+import ResetPassword from './pages/auth/ResetPassword'
+
 
 export default function App() {
   const { user } = useAuth()
@@ -28,6 +30,8 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+
 
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>

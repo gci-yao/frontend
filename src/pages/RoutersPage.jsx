@@ -16,6 +16,8 @@ export default function RoutersPage() {
   const [form, setForm] = useState({ name: '', ip: '', location: '', apiUser: '', apiPass: '' })
   const [nameError, setNameError] = useState('')
   const [ipError, setIpError] = useState('')
+  const [Errors, setErrors] = useState({})
+
 
   const load = async () => {
     setRouters(await api.getRouters({ token: localStorage.getItem('gh_token') }))
@@ -31,9 +33,9 @@ export default function RoutersPage() {
     if (!name) {
       setNameError('')
     } else if (!name.startsWith("Router")) {
-      setNameError('Le nom doit commencer par "Router"')
+      setNameError('The name must start "Router"')
     } else if (routers.some(r => r.name.toLowerCase() === name.toLowerCase())) {
-      setNameError('Ce nom de router existe déjà, choisissez un autre')
+      setNameError('This name of Router already, choose another !')
     } else {
       setNameError('')
     }
@@ -41,13 +43,39 @@ export default function RoutersPage() {
     // Validation IP
     const ipRegex = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/
     if (form.ip && !ipRegex.test(form.ip)) {
-      setIpError('Adresse IP invalide')
+      setIpError('IP address invalidate !')
     } else {
       setIpError('')
     }
+    
   }, [form, routers])
-
+  
+  
+  
   const create = async () => {
+
+    if (!form.location) {
+      setErrors(e => ({ ...e, errLocation: "Please, Choose the commune of your Router !" }));
+      return;
+    } else {
+      // Clear l'erreur si c'est bon
+      setErrors({});
+    }
+    if (!form.apiUser) {
+      setErrors(e => ({ ...e, errApiUser: "Please, Enter your API path !" }));
+      return;
+    } else {
+      // Clear l'erreur si c'est bon
+      setErrors({});
+    }
+    if (!form.apiPass) {
+      setErrors(e => ({ ...e, errApiPass: "Please, Enter your API password !" }));
+      return;
+    } else {
+      // Clear l'erreur si c'est bon
+      setErrors({});
+    }
+      
     try {
       await api.createRouter({
         name: form.name,
@@ -114,24 +142,78 @@ export default function RoutersPage() {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
+
+            <div>
+              <select
+                value={form.location}
+                onChange={e => setForm({ ...form, location: e.target.value })}
+                className="p-2 bg-slate-800 rounded-md w-full"
+              >
+                <option value="">Select a Location of your Router</option>
+
+                {/* Abidjan */}
+                <option value="Abobo">Abobo</option>
+                <option value="Adjamé">Adjamé</option>
+                <option value="Attécoubé">Attécoubé</option>
+                <option value="Bingerville">Bingerville</option>
+                <option value="Cocody">Cocody</option>
+                <option value="Koumassi">Koumassi</option>
+                <option value="Marcory">Marcory</option>
+                <option value="Plateau">Plateau</option>
+                <option value="Port-Bouët">Port-Bouët</option>
+                <option value="Treichville">Treichville</option>
+                <option value="Yopougon">Yopougon</option>
+                <option value="Anyama">Anyama</option>
+                <option value="Songon">Songon</option>
+
+                {/* Grandes villes */}
+                <option value="Bouaké">Bouaké</option>
+                <option value="Yamoussoukro">Yamoussoukro</option>
+                <option value="Daloa">Daloa</option>
+                <option value="San-Pédro">San-Pédro</option>
+                <option value="Korhogo">Korhogo</option>
+                <option value="Man">Man</option>
+                <option value="Gagnoa">Gagnoa</option>
+                <option value="Abengourou">Abengourou</option>
+                <option value="Bondoukou">Bondoukou</option>
+                <option value="Séguéla">Séguéla</option>
+                <option value="Odienné">Odienné</option>
+                <option value="Divo">Divo</option>
+                <option value="Sassandra">Sassandra</option>
+                <option value="Grand-Bassam">Grand-Bassam</option>
+                <option value="Aboisso">Aboisso</option>
+                <option value="Agboville">Agboville</option>
+                <option value="Dabou">Dabou</option>
+                <option value="Toumodi">Toumodi</option>
+                <option value="Ferkessédougou">Ferkessédougou</option>
+                <option value="Boundiali">Boundiali</option>
+                <option value="Bouna">Bouna</option>
+                <option value="Tingréla">Tingréla</option>
+                <option value="Issia">Issia</option>
+                <option value="Bangolo">Bangolo</option>
+                <option value="Guiglo">Guiglo</option>
+                <option value="Vavoua">Vavoua</option>
+                <option value="Soubré">Soubré</option>
+                <option value="Lakota">Lakota</option>
+                <option value="Zuénoula">Zuénoula</option>
+              </select>
+              {Errors.errLocation && <p className='text-red-500'>{Errors.errLocation}</p>}
+            </div>
+
             <input
-              placeholder="Location"
-              value={form.location}
-              onChange={e => setForm({ ...form, location: e.target.value })}
-              className="p-2 bg-slate-800 rounded-md"
-            />
-            <input
-              placeholder="API Username"
+              placeholder="For Example : http://API/path"
               value={form.apiUser}
               onChange={e => setForm({ ...form, apiUser: e.target.value })}
               className="p-2 bg-slate-800 rounded-md"
             />
+            {Errors.errApiUser && <p className='text-red-500'>{Errors.errApiUser}</p>}
             <input
               placeholder="API Password"
               value={form.apiPass}
               onChange={e => setForm({ ...form, apiPass: e.target.value })}
               className="p-2 bg-slate-800 rounded-md"
             />
+            {Errors.errApiPass && <p className='text-red-500'>{Errors.errApiPass}</p>}
           </div>
 
           <div className="flex justify-end mt-3">

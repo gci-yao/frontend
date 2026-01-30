@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://10.212.104.41:8000/api'
 
 function authHeaders(token) {
   return token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -120,5 +120,41 @@ export default {
     })
   },
 
+  // ------------------- check-infos -------------------
+async checkExists({ field, value }) {
+  return request('/auth/check-exists/', {
+    params: { field, value }
+  })
+},
+
+
+// ---------------forgot-password-----------------------
+// api.js
+async forgotPassword({ email }) {
+    return request('/auth/forgot-password/', {
+      method: 'POST',
+      body: { email }
+    })
+  },
+
+  async verifyResetToken(token) {
+    return request('/auth/verify-reset-token/', {
+      method: 'GET',
+      params: { token }
+    })
+  },
+
+  async resetPassword({ token, password }) {
+    return request('/auth/reset-password/', {
+      method: 'POST',
+      body: { token, password }
+    })
+  },
+
+
 }
+
+
+
+
 
